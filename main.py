@@ -70,6 +70,7 @@ class App(ctk.CTk):
             displayed_img_name = self.image_path[self.image_path.rfind('/') + 1:]
             if len(displayed_img_name) > 25:
                 displayed_img_name = displayed_img_name[:16] + "..." + displayed_img_name[-6:]
+
             self.image_text.set(displayed_img_name)
             print(self.image_path)
 
@@ -78,6 +79,7 @@ class App(ctk.CTk):
         displayed_folder_name = self.folder_path[self.folder_path.rfind('/') + 1:]
         if len(displayed_folder_name) > 25:
             displayed_folder_name = displayed_folder_name[:16] + "..." + displayed_folder_name[-6:]
+
         self.folder_text.set(displayed_folder_name)
         print(self.folder_path)
 
