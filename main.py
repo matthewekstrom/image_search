@@ -107,6 +107,7 @@ class App(ctk.CTk):
             filenames.sort()
             folder_images = []
             ind = 0
+            print("Loading Images...")
             while ind < len(filenames):
                 img = cv2.imread(filenames[ind])
                 if img is not None:
@@ -116,6 +117,7 @@ class App(ctk.CTk):
                     filenames.pop(ind)
 
             # Search folder for most similar image
+            print("Searching...")
             result_index = get_most_similar_image(self.image, folder_images, compare_with_color=True)
             result_rgb = cv2.cvtColor(cv2.imread(filenames[result_index]), cv2.COLOR_BGR2RGB)
             self.result_image_path = filenames[result_index]
@@ -174,20 +176,22 @@ def mse(image_1, image_2, compare_with_color):
     # (Similar images will have a lower error value)
     difference = np.sum((image_1.astype("float") - image_2.astype("float")) ** 2)
     difference /= float(image_1.shape[0] * image_1.shape[1])
-    print("Difference: " + str(difference))
+    # print("Difference: " + str(difference))
     return difference
 
 
 def get_most_similar_image(image, candidates, compare_with_color=False):
     image_height, image_width, _ = image.shape
+    scaled_width = 24
+    scaled_height = int(scaled_width * (image_height / image_width))
+    scaled_image = cv2.resize(image, (scaled_width, scaled_height), interpolation=cv2.INTER_AREA)
     image_index, closest_match = 0, 1000000
 
     # Compare with every candidate image
     for i in range(len(candidates)):
-        candidate_height, candidate_width, _ = candidates[i].shape
         # Stretch each candidate image to dimensions of selected image
-        scaled_candidate = cv2.resize(candidates[i], (image_width, image_height), interpolation=cv2.INTER_AREA)
-        comparison = mse(image, scaled_candidate, compare_with_color)
+        scaled_candidate = cv2.resize(candidates[i], (scaled_width, scaled_height), interpolation=cv2.INTER_AREA)
+        comparison = mse(scaled_image, scaled_candidate, compare_with_color)
         if comparison < closest_match:
             closest_match = comparison
             image_index = i
