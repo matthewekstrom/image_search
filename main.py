@@ -2,78 +2,77 @@ import glob
 import tkinter as tk
 from tkinter import filedialog, StringVar
 
-import customtkinter as ctk
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import ImageTk, Image
 
 
-class App(ctk.CTk):
+class App(tk.Tk):
     def __init__(self):
         super().__init__()
         # Main window
-        self.title("Image Search")
-        self.geometry("750x500")
-        self.minsize(700, 500)
-        ctk.set_appearance_mode("dark")
+        self.title("Local Image Search")
+        self.geometry("680x450")
+        self.minsize(650, 400)
+        self.configure(bg="#EAEAEA")
 
         # Configure grid layout
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=3)
+        self.columnconfigure(1, weight=3)
+        self.rowconfigure(0, weight=3)
         self.rowconfigure(1, weight=0)
         self.rowconfigure(2, weight=0)
-        self.rowconfigure(3, weight=1)
+        self.rowconfigure(3, weight=4)
 
         # Add image frames
-        self.left_frame = ctk.CTkFrame(self, width=300, height=220, fg_color=("#d3d3d3", "#333333"), border_width=2)
-        self.left_frame.grid(column=0, row=1, pady=10)
-        self.right_frame = ctk.CTkFrame(self, width=300, height=220, fg_color=("#d3d3d3", "#333333"), border_width=2)
-        self.right_frame.grid(column=1, row=1, pady=10)
+        self.left_frame = tk.Frame(self, width=300, height=220, bg="#d3d3d3")
+        self.left_frame.grid(column=0, row=1, pady=5)
+        self.right_frame = tk.Frame(self, width=300, height=220, bg="#d3d3d3")
+        self.right_frame.grid(column=1, row=1, pady=5)
 
         # Add buttons
-        self.select_image_button = ctk.CTkButton(self, text="Select Image", fg_color="#00858c", command=self.select_image)
-        self.select_image_button.grid(column=0, row=2, sticky=tk.N)
-        self.select_folder_button = ctk.CTkButton(self, text="Select Folder", fg_color="#00858c", command=self.select_folder)
-        self.select_folder_button.grid(column=1, row=2, sticky=tk.N)
-        self.find_closest_match_button = ctk.CTkButton(self, text="Find Closest Match", command=self.find_closest_match)
-        self.find_closest_match_button.grid(row=3, sticky=tk.N, columnspan=2, pady=20)
+        self.select_image_button = tk.Button(self, text="Select Image", command=self.select_image)
+        self.select_image_button.grid(column=0, row=0, sticky=tk.S)
+        self.select_folder_button = tk.Button(self, text="Select Folder", command=self.select_folder)
+        self.select_folder_button.grid(column=1, row=0, sticky=tk.S)
+        self.find_closest_match_button = tk.Button(self, text="Find Closest Match", command=self.find_closest_match)
+        self.find_closest_match_button.grid(row=3, sticky=tk.N, columnspan=2, pady=10)
 
         # Add text labels
         self.image_text = StringVar()
-        image_text_label = ctk.CTkLabel(self, textvariable=self.image_text)
-        image_text_label.grid(column=0, row=0, sticky=tk.S)
+        image_text_label = tk.Label(self, textvariable=self.image_text)
+        image_text_label.grid(column=0, row=2, sticky=tk.N)
         self.folder_text = StringVar()
-        folder_text_label = ctk.CTkLabel(self, textvariable=self.folder_text)
-        folder_text_label.grid(column=1, row=0, sticky=tk.S)
+        folder_text_label = tk.Label(self, textvariable=self.folder_text)
+        folder_text_label.grid(column=1, row=2, sticky=tk.N)
 
         # Variables for file paths and images
         self.image_path = None
         self.image = None
         self.image_label = None
+        self.tk_image = None
         self.folder_path = None
+        self.folder_name = None
         self.result_image_path = None
         self.result_image = None
         self.result_image_label = None
+        self.result_tk_image = None
 
     def select_image(self):
         self.image_path = filedialog.askopenfilename(filetypes=[("image files", (".png", ".jpg"))])
         if self.image_path:
             self.image = cv2.imread(self.image_path)
-            # self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
             image_rgb = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
 
             # Change displayed image size to keep UI consistent
-            frame_width = self.left_frame.winfo_width()
-            frame_height = self.left_frame.winfo_height()
-            dark_img = add_image_padding(image_rgb, frame_width / frame_height, (35, 35, 35))
-            light_img = add_image_padding(image_rgb, frame_width / frame_height, (235, 235, 235))
+            padded_img = add_image_padding(image_rgb, 300 / 220, (235, 235, 235))
+            img = Image.fromarray(padded_img).resize((300, 220))
 
             # Show selected image
-            img = ctk.CTkImage(dark_image=Image.fromarray(dark_img), light_image=Image.fromarray(light_img), size=(frame_width, frame_height))
+            self.tk_image = ImageTk.PhotoImage(image=img)
             if self.image_label:
                 self.image_label.destroy()
-            self.image_label = ctk.CTkLabel(self.left_frame, image=img, text="")
+            self.image_label = tk.Label(self.left_frame, image=self.tk_image, text="")
             self.image_label.pack()
 
             # Show image file name
@@ -87,23 +86,26 @@ class App(ctk.CTk):
         self.folder_path = filedialog.askdirectory()
         if self.folder_path:
             # Show selected folder name
-            displayed_folder_name = self.folder_path[self.folder_path.rfind('/') + 1:]
+            self.folder_name = self.folder_path[self.folder_path.rfind('/') + 1:]
+            displayed_folder_name = self.folder_name
             if len(displayed_folder_name) > 30:
                 displayed_folder_name = displayed_folder_name[:19] + "..." + displayed_folder_name[-8:]
             self.folder_text.set(displayed_folder_name)
             print(self.folder_path)
+            if self.result_image_label:
+                self.result_image_label.pack_forget()
 
     def find_closest_match(self):
         # Check if an image is not selected
         if self.image_path is None:
-            self.image_text.set("Select an Image")
+            self.image_text.set("No image selected")
         # Check if a folder is not selected
         if self.folder_path is None:
-            self.folder_text.set("Select a Folder")
+            self.folder_text.set("No folder selected")
 
         if self.image_path and self.folder_path:
             # Get filenames and images from folder
-            filenames = glob.glob(f"{self.folder_path}/*.png")
+            filenames = glob.glob(f"{self.folder_path}/*.png") + glob.glob(f"{self.folder_path}/*.jpg")
             filenames.sort()
             folder_images = []
             ind = 0
@@ -125,20 +127,18 @@ class App(ctk.CTk):
             print("Image Path: " + self.result_image_path)
 
             # Change displayed image size
-            frame_width = self.right_frame.winfo_width()
-            frame_height = self.right_frame.winfo_height()
-            dark_img = add_image_padding(self.result_image, frame_width / frame_height, (35, 35, 35))
-            light_img = add_image_padding(self.result_image, frame_width / frame_height, (235, 235, 235))
+            padded_result_img = add_image_padding(self.result_image, 300 / 220, (235, 235, 235))
+            img = Image.fromarray(padded_result_img).resize((300, 220))
 
             # Show result
-            img = ctk.CTkImage(dark_image=Image.fromarray(dark_img), light_image=Image.fromarray(light_img), size=(frame_width, frame_height))
+            self.result_tk_image = ImageTk.PhotoImage(image=img)
             if self.result_image_label:
                 self.result_image_label.destroy()
-            self.result_image_label = ctk.CTkLabel(self.right_frame, image=img, text="")
+            self.result_image_label = tk.Label(self.right_frame, image=self.result_tk_image, text="")
             self.result_image_label.pack()
 
             # Show image file path
-            folder_name = self.folder_text.get()
+            folder_name = self.folder_name
             file_name = self.result_image_path[self.result_image_path.rfind('/') + 1:]
             if (len(folder_name) + len(file_name)) > 30:
                 if len(folder_name) > 15:
@@ -176,13 +176,12 @@ def mse(image_1, image_2, compare_with_color):
     # (Similar images will have a lower error value)
     difference = np.sum((image_1.astype("float") - image_2.astype("float")) ** 2)
     difference /= float(image_1.shape[0] * image_1.shape[1])
-    # print("Difference: " + str(difference))
     return difference
 
 
 def get_most_similar_image(image, candidates, compare_with_color=False):
     image_height, image_width, _ = image.shape
-    scaled_width = 24
+    scaled_width = 32
     scaled_height = int(scaled_width * (image_height / image_width))
     scaled_image = cv2.resize(image, (scaled_width, scaled_height), interpolation=cv2.INTER_AREA)
     image_index, closest_match = 0, 1000000
